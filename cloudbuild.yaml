@@ -1,0 +1,75 @@
+﻿steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer1-honeypot:latest', '-f', 'layer1_honeypot/Dockerfile', '.']
+  id: 'build-layer1'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer2-bible:latest', '-f', 'layer2_bible/Dockerfile', '.']
+  id: 'build-layer2'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer3-rl:latest', '-f', 'layer3_rl/Dockerfile', '.']
+  id: 'build-layer3'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer4-analysis:latest', '-f', 'layer4_analysis/Dockerfile', '.']
+  id: 'build-layer4'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer5-reports:latest', '-f', 'layer5_reports/Dockerfile', '.']
+  id: 'build-layer5'
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer1-honeypot:latest']
+  id: 'push-layer1'
+  waitFor: ['build-layer1']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer2-bible:latest']
+  id: 'push-layer2'
+  waitFor: ['build-layer2']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer3-rl:latest']
+  id: 'push-layer3'
+  waitFor: ['build-layer3']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer4-analysis:latest']
+  id: 'push-layer4'
+  waitFor: ['build-layer4']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer5-reports:latest']
+  id: 'push-layer5'
+  waitFor: ['build-layer5']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'phantom-layer1-honeypot', '--image', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer1-honeypot:latest', '--region', 'us-central1', '--project', 'phantom-hack2skill']
+  id: 'deploy-layer1'
+  waitFor: ['push-layer1']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'phantom-layer2-bible', '--image', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer2-bible:latest', '--region', 'us-central1', '--project', 'phantom-hack2skill']
+  id: 'deploy-layer2'
+  waitFor: ['push-layer2']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'phantom-layer3-rl', '--image', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer3-rl:latest', '--region', 'us-central1', '--project', 'phantom-hack2skill']
+  id: 'deploy-layer3'
+  waitFor: ['push-layer3']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'phantom-layer4-analysis', '--image', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer4-analysis:latest', '--region', 'us-central1', '--project', 'phantom-hack2skill']
+  id: 'deploy-layer4'
+  waitFor: ['push-layer4']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'phantom-layer5-reports', '--image', 'us-central1-docker.pkg.dev/phantom-hack2skill/phantom-images/layer5-reports:latest', '--region', 'us-central1', '--project', 'phantom-hack2skill']
+  id: 'deploy-layer5'
+  waitFor: ['push-layer5']
