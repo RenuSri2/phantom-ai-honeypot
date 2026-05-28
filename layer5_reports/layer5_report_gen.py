@@ -31,6 +31,7 @@ from reportlab.pdfgen import canvas
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 from event_bus import get_event_bus, parse_pubsub_message
 
+_pdf_store = {}
 app = Flask(__name__)
 @app.after_request
 def add_cors(response):
@@ -542,9 +543,7 @@ def generate_report(session_id: str) -> dict:
 
     # Upload to Cloud Storage
     try:
-        bucket = storage_client.bucket(REPORTS_BUCKET)
-        blob = bucket.blob(f"reports/{session_id}.pdf")
-        blob.upload_from_file(pdf_buffer, content_type="application/pdf")
+        _pdf_store[session_id] = pdf_buffer.getvalue()
         pdf_url = f"https://storage.googleapis.com/{REPORTS_BUCKET}/reports/{session_id}.pdf"
         # make_public() disabled - bucket uses uniform access
     except Exception as e:
@@ -595,9 +594,9 @@ def download_report(session_id):
 
     # Try to get from Cloud Storage
     try:
-        bucket = storage_client.bucket(REPORTS_BUCKET)
-        blob = bucket.blob(f"reports/{session_id}.pdf")
-        pdf_bytes = BytesIO(blob.download_as_bytes())
+        if session_id not in _pdf_store:
+            return jsonify({"error": "Report not found"}), 404
+        pdf_bytes = BytesIO(_pdf_store[session_id])
         return send_file(
             pdf_bytes, mimetype="application/pdf",
             as_attachment=True,
