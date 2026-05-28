@@ -13,9 +13,6 @@ from datetime import datetime, timezone
 from io import BytesIO
 
 from flask import Flask, request, jsonify, send_file
-from google.cloud import storage
-from google import genai
-from google.genai.types import GenerateContentConfig
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch, mm
@@ -31,6 +28,7 @@ from reportlab.pdfgen import canvas
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 from event_bus import get_event_bus, parse_pubsub_message
 
+_pdf_store = {}
 _pdf_store = {}
 app = Flask(__name__)
 @app.after_request
@@ -53,8 +51,6 @@ REGION = os.environ.get("GCP_REGION", "us-central1")
 REPORTS_BUCKET = os.environ.get("REPORTS_BUCKET", f"{PROJECT_ID}-phantom-reports")
 ABUSEIPDB_KEY = os.environ.get("ABUSEIPDB_API_KEY", "")
 
-ai_client = genai.Client(vertexai=True, project=PROJECT_ID, location=REGION)
-storage_client = storage.Client(project=PROJECT_ID)
 
 # ---------------------------------------------------------------------------
 # Color Palette
@@ -544,7 +540,8 @@ def generate_report(session_id: str) -> dict:
     # Upload to Cloud Storage
     try:
         _pdf_store[session_id] = pdf_buffer.getvalue()
-        pdf_url = f"https://storage.googleapis.com/{REPORTS_BUCKET}/reports/{session_id}.pdf"
+        pdf_url = f"/api/report/{session_id}/download"
+        _pdf_store[session_id] = pdf_buffer.getvalue()
         # make_public() disabled - bucket uses uniform access
     except Exception as e:
         logger.warning(f"Cloud Storage upload failed: {e}")
@@ -604,7 +601,10 @@ def download_report(session_id):
         )
     except Exception as e:
         logger.error(f"Failed to download report: {e}")
-        return jsonify({"error": "Report not found in storage"}), 404
+        if session_id not in _pdf_store:
+            return jsonify({"error": "Report not found"}), 404
+        pdf_bytes = BytesIO(_pdf_store[session_id])
+        return send_file(pdf_bytes, mimetype="application/pdf", as_attachment=True, download_name=f"PHANTOM_Report_{session_id}.pdf")
 
 
 @app.route("/api/pubsub/disconnect", methods=["POST"])
