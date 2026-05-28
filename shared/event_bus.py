@@ -18,6 +18,23 @@ from firebase_admin import credentials, db as rtdb
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("phantom.event_bus")
 
+import base64, tempfile
+
+def _setup_credentials():
+    creds_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    if creds_json:
+        try:
+            decoded = base64.b64decode(creds_json).decode("utf-8")
+            tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+            tmp.write(decoded)
+            tmp.flush()
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+            print("Credentials loaded from env var")
+        except Exception as e:
+            print(f"Failed to load credentials: {e}")
+
+_setup_credentials()
+
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "phantom-hack2skill")
 REGION = os.environ.get("GCP_REGION", "us-central1")
 
