@@ -1,11 +1,7 @@
-﻿# PHANTOM Layer 1 - Flask Honeypot
-FROM python:3.11-slim AS builder
-WORKDIR /build
-COPY layer1_honeypot/requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.11-slim
 WORKDIR /app
-COPY --from=builder /install /usr/local
+COPY layer1_honeypot/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY layer1_honeypot/ .
 COPY shared/event_bus.py /app/event_bus.py
 ENV PYTHONUNBUFFERED=1

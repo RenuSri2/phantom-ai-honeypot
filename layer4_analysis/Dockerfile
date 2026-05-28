@@ -1,11 +1,7 @@
-﻿# PHANTOM Layer 4 - Analysis
-FROM python:3.11-slim AS builder
-WORKDIR /build
-COPY layer4_analysis/requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.11-slim
 WORKDIR /app
-COPY --from=builder /install /usr/local
+COPY layer4_analysis/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY layer4_analysis/ .
 COPY shared/event_bus.py /app/event_bus.py
 ENV PYTHONUNBUFFERED=1
